@@ -1184,4 +1184,4 @@ export default function SettingsPage() {
       </Tabs>
     </>
   );
-}i have pasted above code a
+}

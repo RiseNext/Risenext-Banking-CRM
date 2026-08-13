@@ -126,7 +126,7 @@ export default function EmployeesPage() {
         </div>
       ),
     },
-    { key: "role", header: "string", sortValue: (row) => row.roleName },
+    { key: "role", header: "Role", sortValue: (row) => row.roleName },
     { key: "branch", header: "Branch", sortValue: (row) => row.branch },
     {
       key: "assignedBanks",
@@ -239,7 +239,7 @@ export default function EmployeesPage() {
         </SectionCard>
 
         <SectionCard
-          title="string permissions"
+          title="Permissions"
           description="What each role can do in the workspace"
           contentClassName="space-y-2.5"
         >
@@ -271,7 +271,7 @@ export default function EmployeesPage() {
         filters={[
           {
             key: "role",
-            label: "string",
+            label: "Role",
             options: ["Super Admin", "Admin", "Manager", "Employee"],
             value: (row) => row.roleName,
           },
@@ -370,21 +370,27 @@ export default function EmployeesPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label>string</Label>
-              <Select
-                value={resolvedRoleId}
-                onValueChange={(value) => setForm({ ...form, roleId: value as string })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Admin">Admin</SelectItem>
-                  <SelectItem value="Manager">Manager</SelectItem>
-                  <SelectItem value="Employee">Employee</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+  <Label htmlFor="emp-role">Role</Label>
+
+  <Select
+    value={resolvedRoleId}
+    onValueChange={(value) =>
+      setForm({ ...form, roleId: value })
+    }
+  >
+    <SelectTrigger>
+      <SelectValue placeholder="Select role" />
+    </SelectTrigger>
+
+    <SelectContent>
+      {roles.map((role) => (
+        <SelectItem key={role.id} value={role.id}>
+          {role.name}
+        </SelectItem>
+      ))}
+    </SelectContent>
+  </Select>
+</div>
             <div className="space-y-1.5">
               <Label htmlFor="emp-target">Quarterly target</Label>
               <Input

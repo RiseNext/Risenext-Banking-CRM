@@ -3,7 +3,11 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+<<<<<<< HEAD
 import { FileSpreadsheet, Plus, UserPlus, Users } from "lucide-react";
+=======
+import { Download, FileSpreadsheet, Plus, UploadCloud, UserPlus, Users } from "lucide-react";
+>>>>>>> a52d548 (Initial commit)
 import { PageHeader } from "@/components/shared/page-header";
 import { DataTable, type Column } from "@/components/shared/data-table";
 import { StatusBadge } from "@/components/shared/status-badge";
@@ -71,7 +75,66 @@ export default function CustomersPage() {
   const resolvedBankId = form.bankId || (banks[0]?.id ?? "");
   const resolvedAssignedTo = form.assignedTo || (employees[0]?.id ?? "");
   const [importOpen, setImportOpen] = React.useState(false);
+<<<<<<< HEAD
 
+=======
+  const manualFormInputRef = React.useRef<HTMLInputElement>(null);
+
+  function downloadDraftApplication() {
+    const applicantName = form.name.trim() || "Customer";
+    const fileName = `${applicantName.toLowerCase().replace(/\s+/g, "-") || "customer"}-draft-application.html`;
+    const html = `<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Customer Draft Application</title>
+    <style>
+      body { font-family: Arial, sans-serif; margin: 32px; color: #111827; }
+      h1 { margin-bottom: 8px; }
+      .meta { margin: 12px 0; color: #374151; }
+      .section { margin-top: 24px; }
+      .row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e5e7eb; }
+    </style>
+  </head>
+  <body>
+    <h1>Customer Draft Application</h1>
+    <div class="meta">Applicant: ${applicantName}</div>
+    <div class="meta">Prepared for verification and onboarding</div>
+    <div class="section">
+      <div class="row"><span>Customer name</span><strong>${applicantName}</strong></div>
+      <div class="row"><span>Bank</span><strong>${bankName(resolvedBankId) || "—"}</strong></div>
+      <div class="row"><span>Mobile</span><strong>${form.mobile || "—"}</strong></div>
+      <div class="row"><span>Email</span><strong>${form.email || "—"}</strong></div>
+      <div class="row"><span>PAN</span><strong>${form.pan || "—"}</strong></div>
+      <div class="row"><span>Income</span><strong>${formatCurrency(num(form.monthlyIncome))}</strong></div>
+    </div>
+    <p>Use this draft for manual verification and re-upload the filled form when needed.</p>
+  </body>
+</html>`;
+    const url = URL.createObjectURL(new Blob([html], { type: "text/html;charset=utf-8" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success("Draft application downloaded", {
+      description: "The application form is ready for manual verification.",
+    });
+  }
+
+  function handleManualFormUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    toast.success("Written form uploaded", {
+      description: `${file.name} has been queued for verification.`,
+    });
+
+    event.target.value = "";
+  }
+>>>>>>> a52d548 (Initial commit)
 
 async function deleteCustomer(id: string) {
   // Soft delete: the record moves to the recycle bin, it is not destroyed.
@@ -222,6 +285,7 @@ async function deleteCustomer(id: string) {
       exportValue: (row) => row.createdAt,
     },
     {
+<<<<<<< HEAD
   key: "actions",
   header: "Actions",
   render: (row) => (
@@ -257,6 +321,35 @@ async function deleteCustomer(id: string) {
     </div>
   ),
 }
+=======
+      key: "actions",
+      header: "Actions",
+      render: (row) => (
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={(e) => {
+              e.stopPropagation();
+              router.push(`/customers/${row.id}`);
+            }}
+          >
+            View
+          </Button>
+          <Button
+            size="sm"
+            variant="destructive"
+            onClick={(e) => {
+              e.stopPropagation();
+              deleteCustomer(row.id);
+            }}
+          >
+            Delete
+          </Button>
+        </div>
+      ),
+    }
+>>>>>>> a52d548 (Initial commit)
 
   ];
 
@@ -271,6 +364,12 @@ async function deleteCustomer(id: string) {
         description="Every lead and borrower on the desk, with KYC state, assigned owner, and lender mapping."
         actions={
           <>
+<<<<<<< HEAD
+=======
+            <Button variant="outline" onClick={downloadDraftApplication}>
+              <Download className="size-4" /> Draft application
+            </Button>
+>>>>>>> a52d548 (Initial commit)
             <Button variant="outline" asChild>
               <Link href="/documents">Documents</Link>
             </Button>
@@ -279,13 +378,35 @@ async function deleteCustomer(id: string) {
                 <FileSpreadsheet className="size-4" /> Import Excel
               </Button>
             )}
+<<<<<<< HEAD
             <Button onClick={() => setOpen(true)}>
               <Plus className="size-4" /> Add customer
             </Button>
+=======
+            <div className="flex items-center gap-2">
+              <Button variant="outline" onClick={() => manualFormInputRef.current?.click()}>
+                <UploadCloud className="size-4" /> Re-upload written form
+              </Button>
+              <Button onClick={() => setOpen(true)}>
+                <Plus className="size-4" /> Add customer
+              </Button>
+            </div>
+>>>>>>> a52d548 (Initial commit)
           </>
         }
       />
 
+<<<<<<< HEAD
+=======
+      <input
+        ref={manualFormInputRef}
+        type="file"
+        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+        className="hidden"
+        onChange={handleManualFormUpload}
+      />
+
+>>>>>>> a52d548 (Initial commit)
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Total on desk" value={String(rows.length)} icon={Users} helper="in this view" />
         <StatCard

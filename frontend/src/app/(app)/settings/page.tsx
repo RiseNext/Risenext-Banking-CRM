@@ -103,7 +103,11 @@ const sessions = [
 
 export default function SettingsPage() {
   const { banks } = useReference();
+<<<<<<< HEAD
   const { user } = useAuth();
+=======
+  const { user, updateUser } = useAuth();
+>>>>>>> a52d548 (Initial commit)
 
   /* -------------------------------------------------------------------------- */
   /* Profile state                                                               */
@@ -111,10 +115,17 @@ export default function SettingsPage() {
 
   const [name, setName] = React.useState(user?.name ?? "");
   const [email, setEmail] = React.useState(user?.email ?? "");
+<<<<<<< HEAD
   const [phone, setPhone] = React.useState("9876543210");
 
   const [avatarUrl, setAvatarUrl] = React.useState<string | null>(
     (user as any)?.avatarUrl ?? null
+=======
+  const [phone, setPhone] = React.useState(user?.phone ?? "");
+
+  const [avatarUrl, setAvatarUrl] = React.useState<string | null>(
+    user?.avatarUrl ?? null
+>>>>>>> a52d548 (Initial commit)
   );
 
   const [avatarFile, setAvatarFile] = React.useState<File | null>(null);
@@ -130,7 +141,12 @@ export default function SettingsPage() {
 
     setName(user.name ?? "");
     setEmail(user.email ?? "");
+<<<<<<< HEAD
     setAvatarUrl((user as any)?.avatarUrl ?? null);
+=======
+    setPhone(user.phone ?? "");
+    setAvatarUrl(user.avatarUrl ?? null);
+>>>>>>> a52d548 (Initial commit)
   }, [user]);
 
   /* -------------------------------------------------------------------------- */
@@ -185,6 +201,7 @@ export default function SettingsPage() {
       URL.revokeObjectURL(avatarUrl);
     }
 
+<<<<<<< HEAD
     const previewUrl = URL.createObjectURL(file);
 
     setAvatarFile(file);
@@ -194,6 +211,27 @@ export default function SettingsPage() {
       description:
         "Click Save changes to apply it.",
     });
+=======
+    const reader = new FileReader();
+    reader.onload = () => {
+      const previewUrl = typeof reader.result === "string" ? reader.result : null;
+      if (!previewUrl) {
+        toast.error("Could not read image", {
+          description: "Please try a different image file.",
+        });
+        return;
+      }
+
+      setAvatarFile(file);
+      setAvatarUrl(previewUrl);
+
+      toast.success("Photo selected", {
+        description:
+          "Click Save changes to apply it.",
+      });
+    };
+    reader.readAsDataURL(file);
+>>>>>>> a52d548 (Initial commit)
   }
 
   /* -------------------------------------------------------------------------- */
@@ -242,6 +280,7 @@ export default function SettingsPage() {
 
   async function saveProfile() {
     try {
+<<<<<<< HEAD
       /*
        * At this stage this keeps the same behavior as your
        * existing frontend demo.
@@ -261,6 +300,28 @@ export default function SettingsPage() {
       toast.success("Settings saved", {
         description:
           "Changes applied to this workspace.",
+=======
+      if (!user) {
+        toast.error("No active session", {
+          description: "Sign in again and try saving the profile.",
+        });
+        return;
+      }
+
+      const nextUser = {
+        ...user,
+        name,
+        email,
+        phone: phone || null,
+        avatarUrl: avatarUrl || null,
+      };
+
+      updateUser(nextUser);
+
+      toast.success("Settings saved", {
+        description:
+          "Your profile changes are now stored for this session and after reload.",
+>>>>>>> a52d548 (Initial commit)
       });
     } catch (error) {
       console.error(error);

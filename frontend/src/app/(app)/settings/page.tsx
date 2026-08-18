@@ -19,17 +19,20 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+
 import {
   Avatar,
   AvatarFallback,
   AvatarImage,
 } from "@/components/ui/avatar";
+
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
+
 import {
   Select,
   SelectContent,
@@ -37,6 +40,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+
 import {
   Table,
   TableBody,
@@ -51,6 +55,10 @@ import { initials } from "@/lib/utils";
 import { formatDate } from "@/lib/format";
 import { toast } from "sonner";
 import { useReference } from "@/hooks/use-reference";
+
+/* -------------------------------------------------------------------------- */
+/* Alert preferences                                                          */
+/* -------------------------------------------------------------------------- */
 
 const alertPrefs = [
   {
@@ -80,6 +88,10 @@ const alertPrefs = [
   },
 ];
 
+/* -------------------------------------------------------------------------- */
+/* Active sessions                                                            */
+/* -------------------------------------------------------------------------- */
+
 const sessions = [
   {
     device: "Chrome · Windows",
@@ -101,57 +113,52 @@ const sessions = [
   },
 ];
 
+/* -------------------------------------------------------------------------- */
+/* Settings Page                                                              */
+/* -------------------------------------------------------------------------- */
+
 export default function SettingsPage() {
   const { banks } = useReference();
-
-  const { user } = useAuth();
-
   const { user, updateUser } = useAuth();
 
-
-  /* -------------------------------------------------------------------------- */
-  /* Profile state                                                               */
-  /* -------------------------------------------------------------------------- */
+  /* ------------------------------------------------------------------------ */
+  /* Profile state                                                            */
+  /* ------------------------------------------------------------------------ */
 
   const [name, setName] = React.useState(user?.name ?? "");
   const [email, setEmail] = React.useState(user?.email ?? "");
-
-  const [phone, setPhone] = React.useState("9876543210");
-
-  const [avatarUrl, setAvatarUrl] = React.useState<string | null>(
-    (user as any)?.avatarUrl ?? null
-
   const [phone, setPhone] = React.useState(user?.phone ?? "");
 
+  /*
+   * avatarUrl may not yet exist in the auth User type.
+   * Using a safe cast here prevents TypeScript errors if the
+   * current auth type has not been updated with avatarUrl yet.
+   */
   const [avatarUrl, setAvatarUrl] = React.useState<string | null>(
-    user?.avatarUrl ?? null
-
+    (user as any)?.avatarUrl ?? null
   );
 
   const [avatarFile, setAvatarFile] = React.useState<File | null>(null);
 
   const avatarInputRef = React.useRef<HTMLInputElement | null>(null);
 
-  /* -------------------------------------------------------------------------- */
-  /* Keep local profile fields synced when auth user becomes available           */
-  /* -------------------------------------------------------------------------- */
+  /* ------------------------------------------------------------------------ */
+  /* Sync profile fields when auth user becomes available                     */
+  /* ------------------------------------------------------------------------ */
 
   React.useEffect(() => {
     if (!user) return;
 
     setName(user.name ?? "");
     setEmail(user.email ?? "");
+    setPhone(user.phone ?? "");
 
     setAvatarUrl((user as any)?.avatarUrl ?? null);
-
-    setPhone(user.phone ?? "");
-    setAvatarUrl(user.avatarUrl ?? null);
-
   }, [user]);
 
-  /* -------------------------------------------------------------------------- */
-  /* Avatar upload                                                               */
-  /* -------------------------------------------------------------------------- */
+  /* ------------------------------------------------------------------------ */
+  /* Avatar upload                                                            */
+  /* ------------------------------------------------------------------------ */
 
   function handleAvatarClick() {
     avatarInputRef.current?.click();
@@ -162,7 +169,9 @@ export default function SettingsPage() {
   ) {
     const file = event.target.files?.[0];
 
-    if (!file) return;
+    if (!file) {
+      return;
+    }
 
     const allowedTypes = [
       "image/jpeg",
@@ -191,61 +200,47 @@ export default function SettingsPage() {
     }
 
     /*
-     * Revoke the previous temporary object URL before
-     * creating a new one.
+     * Use FileReader to create a persistent preview string.
+     * This avoids unnecessary blob URL handling.
      */
-    if (
-      avatarUrl &&
-      avatarUrl.startsWith("blob:")
-    ) {
-      URL.revokeObjectURL(avatarUrl);
-    }
-
-
-    const previewUrl = URL.createObjectURL(file);
-
-    setAvatarFile(file);
-    setAvatarUrl(previewUrl);
-
-    toast.success("Photo selected", {
-      description:
-        "Click Save changes to apply it.",
-    });
-
     const reader = new FileReader();
+
     reader.onload = () => {
-      const previewUrl = typeof reader.result === "string" ? reader.result : null;
-      if (!previewUrl) {
+      const result = reader.result;
+
+      if (typeof result !== "string") {
         toast.error("Could not read image", {
-          description: "Please try a different image file.",
+          description:
+            "Please try a different image file.",
         });
+
         return;
       }
 
       setAvatarFile(file);
-      setAvatarUrl(previewUrl);
+      setAvatarUrl(result);
 
       toast.success("Photo selected", {
         description:
           "Click Save changes to apply it.",
       });
     };
-    reader.readAsDataURL(file);
 
+    reader.onerror = () => {
+      toast.error("Could not read image", {
+        description:
+          "Please try a different image file.",
+      });
+    };
+
+    reader.readAsDataURL(file);
   }
 
-  /* -------------------------------------------------------------------------- */
-  /* Remove avatar                                                               */
-  /* -------------------------------------------------------------------------- */
+  /* ------------------------------------------------------------------------ */
+  /* Remove avatar                                                            */
+  /* ------------------------------------------------------------------------ */
 
   function handleRemoveAvatar() {
-    if (
-      avatarUrl &&
-      avatarUrl.startsWith("blob:")
-    ) {
-      URL.revokeObjectURL(avatarUrl);
-    }
-
     setAvatarFile(null);
     setAvatarUrl(null);
 
@@ -259,37 +254,26 @@ export default function SettingsPage() {
     });
   }
 
-  /* -------------------------------------------------------------------------- */
-  /* Cleanup temporary avatar object URL                                         */
-  /* -------------------------------------------------------------------------- */
-
-  React.useEffect(() => {
-    return () => {
-      if (
-        avatarUrl &&
-        avatarUrl.startsWith("blob:")
-      ) {
-        URL.revokeObjectURL(avatarUrl);
-      }
-    };
-  }, [avatarUrl]);
-
-  /* -------------------------------------------------------------------------- */
-  /* Save profile                                                                */
-  /* -------------------------------------------------------------------------- */
+  /* ------------------------------------------------------------------------ */
+  /* Save profile                                                             */
+  /* ------------------------------------------------------------------------ */
 
   async function saveProfile() {
     try {
+      if (!user) {
+        toast.error("No active session", {
+          description:
+            "Sign in again and try saving the profile.",
+        });
+
+        return;
+      }
 
       /*
-       * At this stage this keeps the same behavior as your
-       * existing frontend demo.
-       *
-       * When the backend is connected, this is the correct
-       * place to call your profile update API and upload
-       * avatarFile.
+       * Keep the avatar file available for a future backend upload.
+       * The current implementation stores the preview URL/base64
+       * through updateUser.
        */
-
       console.log("Profile changes:", {
         name,
         email,
@@ -297,34 +281,26 @@ export default function SettingsPage() {
         avatarFile,
       });
 
-      toast.success("Settings saved", {
-        description:
-          "Changes applied to this workspace.",
-
-      if (!user) {
-        toast.error("No active session", {
-          description: "Sign in again and try saving the profile.",
-        });
-        return;
-      }
-
       const nextUser = {
         ...user,
         name,
         email,
-        phone: phone || null,
+        phone: phone || "",
         avatarUrl: avatarUrl || null,
       };
 
-      updateUser(nextUser);
+      /*
+       * Cast is used here because the current auth type may not
+       * yet contain avatarUrl.
+       */
+      updateUser(nextUser as any);
 
       toast.success("Settings saved", {
         description:
           "Your profile changes are now stored for this session and after reload.",
-
       });
     } catch (error) {
-      console.error(error);
+      console.error("Unable to save settings:", error);
 
       toast.error("Unable to save settings", {
         description:
@@ -333,9 +309,9 @@ export default function SettingsPage() {
     }
   }
 
-  /* -------------------------------------------------------------------------- */
-  /* Password                                                                    */
-  /* -------------------------------------------------------------------------- */
+  /* ------------------------------------------------------------------------ */
+  /* Password                                                                 */
+  /* ------------------------------------------------------------------------ */
 
   function handlePasswordUpdate() {
     toast.success("Password updated", {
@@ -344,9 +320,9 @@ export default function SettingsPage() {
     });
   }
 
-  /* -------------------------------------------------------------------------- */
-  /* Export workspace                                                            */
-  /* -------------------------------------------------------------------------- */
+  /* ------------------------------------------------------------------------ */
+  /* Export workspace                                                         */
+  /* ------------------------------------------------------------------------ */
 
   function handleExportRequest() {
     toast.success("Export queued", {
@@ -355,19 +331,23 @@ export default function SettingsPage() {
     });
   }
 
-  /* -------------------------------------------------------------------------- */
-  /* Reset demo data                                                             */
-  /* -------------------------------------------------------------------------- */
+  /* ------------------------------------------------------------------------ */
+  /* Reset demo data                                                          */
+  /* ------------------------------------------------------------------------ */
 
   function handleResetData() {
     window.location.reload();
   }
 
+  /* ------------------------------------------------------------------------ */
+  /* Render                                                                   */
+  /* ------------------------------------------------------------------------ */
+
   return (
     <>
-      {/* ---------------------------------------------------------------------- */}
-      {/* Page Header                                                             */}
-      {/* ---------------------------------------------------------------------- */}
+      {/* ==================================================================== */}
+      {/* PAGE HEADER                                                           */}
+      {/* ==================================================================== */}
 
       <PageHeader
         eyebrow="Account"
@@ -381,9 +361,9 @@ export default function SettingsPage() {
         }
       />
 
-      {/* ---------------------------------------------------------------------- */}
-      {/* Settings Tabs                                                           */}
-      {/* ---------------------------------------------------------------------- */}
+      {/* ==================================================================== */}
+      {/* SETTINGS TABS                                                         */}
+      {/* ==================================================================== */}
 
       <Tabs defaultValue="profile">
         <TabsList className="flex-wrap">
@@ -408,12 +388,13 @@ export default function SettingsPage() {
           </TabsTrigger>
         </TabsList>
 
-        {/* ==================================================================== */}
-        {/* PROFILE                                                               */}
-        {/* ==================================================================== */}
+        {/* ================================================================== */}
+        {/* PROFILE                                                             */}
+        {/* ================================================================== */}
 
         <TabsContent value="profile">
           <div className="grid gap-4 lg:grid-cols-3">
+            {/* Profile card */}
             <SectionCard
               title="Your profile"
               description="Shown to your team on every record"
@@ -425,10 +406,7 @@ export default function SettingsPage() {
                   {avatarUrl && (
                     <AvatarImage
                       src={avatarUrl}
-                      alt={
-                        name ||
-                        "Profile photo"
-                      }
+                      alt={name || "Profile photo"}
                     />
                   )}
 
@@ -444,18 +422,14 @@ export default function SettingsPage() {
                       type="file"
                       accept="image/jpeg,image/png,image/webp"
                       className="hidden"
-                      onChange={
-                        handleAvatarChange
-                      }
+                      onChange={handleAvatarChange}
                     />
 
                     <Button
                       variant="outline"
                       size="sm"
                       type="button"
-                      onClick={
-                        handleAvatarClick
-                      }
+                      onClick={handleAvatarClick}
                     >
                       Change photo
                     </Button>
@@ -464,13 +438,8 @@ export default function SettingsPage() {
                       variant="ghost"
                       size="sm"
                       type="button"
-                      onClick={
-                        handleRemoveAvatar
-                      }
-                      disabled={
-                        !avatarUrl &&
-                        !avatarFile
-                      }
+                      onClick={handleRemoveAvatar}
+                      disabled={!avatarUrl && !avatarFile}
                     >
                       Remove
                     </Button>
@@ -478,11 +447,7 @@ export default function SettingsPage() {
 
                   <p className="text-[11px] text-[var(--muted-foreground)]">
                     Signed in as{" "}
-                    {user?.role?.name ??
-                      "User"}{" "}
-                    ·{" "}
-                    {user?.role?.name ??
-                      "User"}
+                    {(user as any)?.role?.name ?? "User"}
                   </p>
                 </div>
               </div>
@@ -491,6 +456,7 @@ export default function SettingsPage() {
 
               {/* Profile fields */}
               <div className="grid gap-3 pt-4 sm:grid-cols-2">
+                {/* Full name */}
                 <div className="space-y-1.5">
                   <Label htmlFor="s-name">
                     Full name
@@ -500,13 +466,12 @@ export default function SettingsPage() {
                     id="s-name"
                     value={name}
                     onChange={(event) =>
-                      setName(
-                        event.target.value
-                      )
+                      setName(event.target.value)
                     }
                   />
                 </div>
 
+                {/* Email */}
                 <div className="space-y-1.5">
                   <Label htmlFor="s-email">
                     Work email
@@ -517,13 +482,12 @@ export default function SettingsPage() {
                     type="email"
                     value={email}
                     onChange={(event) =>
-                      setEmail(
-                        event.target.value
-                      )
+                      setEmail(event.target.value)
                     }
                   />
                 </div>
 
+                {/* Phone */}
                 <div className="space-y-1.5">
                   <Label htmlFor="s-phone">
                     Phone
@@ -545,6 +509,7 @@ export default function SettingsPage() {
                   />
                 </div>
 
+                {/* Default landing page */}
                 <div className="space-y-1.5">
                   <Label>
                     Default landing page
@@ -590,14 +555,12 @@ export default function SettingsPage() {
                     "Fit more rows on screen",
                 },
                 {
-                  label:
-                    "Show amounts in lakhs",
+                  label: "Show amounts in lakhs",
                   description:
                     "Use ₹ L and ₹ Cr formatting",
                 },
                 {
-                  label:
-                    "Open records in dialog",
+                  label: "Open records in dialog",
                   description:
                     "Instead of a full page",
                 },
@@ -617,9 +580,7 @@ export default function SettingsPage() {
                   </div>
 
                   <Switch
-                    defaultChecked={
-                      index !== 0
-                    }
+                    defaultChecked={index !== 0}
                   />
                 </div>
               ))}
@@ -627,18 +588,20 @@ export default function SettingsPage() {
           </div>
         </TabsContent>
 
-        {/* ==================================================================== */}
-        {/* COMPANY                                                               */}
-        {/* ==================================================================== */}
+        {/* ================================================================== */}
+        {/* COMPANY                                                             */}
+        {/* ================================================================== */}
 
         <TabsContent value="company">
           <div className="grid gap-4 lg:grid-cols-3">
+            {/* Company record */}
             <SectionCard
               title="Company record"
               description="Printed on invoices and settlement statements"
               className="lg:col-span-2"
             >
               <div className="grid gap-3 sm:grid-cols-2">
+                {/* Registered name */}
                 <div className="space-y-1.5 sm:col-span-2">
                   <Label htmlFor="co-name">
                     Registered name
@@ -650,6 +613,7 @@ export default function SettingsPage() {
                   />
                 </div>
 
+                {/* GSTIN */}
                 <div className="space-y-1.5">
                   <Label htmlFor="co-gst">
                     GSTIN
@@ -661,6 +625,7 @@ export default function SettingsPage() {
                   />
                 </div>
 
+                {/* PAN */}
                 <div className="space-y-1.5">
                   <Label htmlFor="co-pan">
                     PAN
@@ -672,6 +637,7 @@ export default function SettingsPage() {
                   />
                 </div>
 
+                {/* Address */}
                 <div className="space-y-1.5 sm:col-span-2">
                   <Label htmlFor="co-address">
                     Registered address
@@ -683,6 +649,7 @@ export default function SettingsPage() {
                   />
                 </div>
 
+                {/* Support phone */}
                 <div className="space-y-1.5">
                   <Label htmlFor="co-phone">
                     Support phone
@@ -694,6 +661,7 @@ export default function SettingsPage() {
                   />
                 </div>
 
+                {/* Billing email */}
                 <div className="space-y-1.5">
                   <Label htmlFor="co-email">
                     Billing email
@@ -763,16 +731,16 @@ export default function SettingsPage() {
               </div>
 
               <p className="rounded-md bg-[var(--secondary)] px-3 py-2 text-[11px] text-[var(--muted-foreground)]">
-                Next invoice will be
-                raised as RN/24-25/046.
+                Next invoice will be raised as
+                RN/24-25/046.
               </p>
             </SectionCard>
           </div>
         </TabsContent>
 
-        {/* ==================================================================== */}
-        {/* BANK ACCESS                                                           */}
-        {/* ==================================================================== */}
+        {/* ================================================================== */}
+        {/* BANK ACCESS                                                         */}
+        {/* ================================================================== */}
 
         <TabsContent value="banks">
           <SectionCard
@@ -854,12 +822,9 @@ export default function SettingsPage() {
                     <TableCell className="text-right">
                       <Switch
                         defaultChecked={
-                          bank.status ===
-                          "Active"
+                          bank.status === "Active"
                         }
-                        onCheckedChange={(
-                          checked
-                        ) =>
+                        onCheckedChange={(checked) =>
                           toast.success(
                             checked
                               ? "Logging enabled"
@@ -879,56 +844,52 @@ export default function SettingsPage() {
           </SectionCard>
         </TabsContent>
 
-        {/* ==================================================================== */}
-        {/* ALERTS                                                                */}
-        {/* ==================================================================== */}
+        {/* ================================================================== */}
+        {/* ALERTS                                                              */}
+        {/* ================================================================== */}
 
         <TabsContent value="alerts">
           <div className="grid gap-4 lg:grid-cols-2">
+            {/* Alert preferences */}
             <SectionCard
               title="Alert preferences"
               description="Choose what lands in your notifications"
               contentClassName="space-y-4"
             >
-              {alertPrefs.map(
-                (pref, index) => (
-                  <div
-                    key={pref.key}
-                    className="flex items-start justify-between gap-3"
-                  >
-                    <div>
-                      <p className="text-[13px] font-medium">
-                        {pref.label}
-                      </p>
+              {alertPrefs.map((pref, index) => (
+                <div
+                  key={pref.key}
+                  className="flex items-start justify-between gap-3"
+                >
+                  <div>
+                    <p className="text-[13px] font-medium">
+                      {pref.label}
+                    </p>
 
-                      <p className="text-[11px] text-[var(--muted-foreground)]">
-                        {pref.description}
-                      </p>
-                    </div>
-
-                    <Switch
-                      defaultChecked={
-                        index < 4
-                      }
-                      onCheckedChange={(
-                        checked
-                      ) =>
-                        toast.success(
-                          checked
-                            ? "Alert on"
-                            : "Alert off",
-                          {
-                            description:
-                              pref.label,
-                          }
-                        )
-                      }
-                    />
+                    <p className="text-[11px] text-[var(--muted-foreground)]">
+                      {pref.description}
+                    </p>
                   </div>
-                )
-              )}
+
+                  <Switch
+                    defaultChecked={index < 4}
+                    onCheckedChange={(checked) =>
+                      toast.success(
+                        checked
+                          ? "Alert on"
+                          : "Alert off",
+                        {
+                          description:
+                            pref.label,
+                        }
+                      )
+                    }
+                  />
+                </div>
+              ))}
             </SectionCard>
 
+            {/* Delivery channels */}
             <SectionCard
               title="Delivery channels"
               description="Where alerts are sent"
@@ -936,8 +897,7 @@ export default function SettingsPage() {
             >
               {[
                 {
-                  label:
-                    "In-app notifications",
+                  label: "In-app notifications",
                   value: "Always on",
                   locked: true,
                 },
@@ -950,13 +910,12 @@ export default function SettingsPage() {
                 },
                 {
                   label: "SMS",
-                  value: phone,
+                  value: phone || "Not configured",
                   locked: false,
                 },
                 {
                   label: "WhatsApp",
-                  value:
-                    "Not connected",
+                  value: "Not connected",
                   locked: false,
                 },
               ].map((channel) => (
@@ -992,9 +951,9 @@ export default function SettingsPage() {
           </div>
         </TabsContent>
 
-        {/* ==================================================================== */}
-        {/* SECURITY                                                              */}
-        {/* ==================================================================== */}
+        {/* ================================================================== */}
+        {/* SECURITY                                                            */}
+        {/* ================================================================== */}
 
         <TabsContent value="security">
           <div className="grid gap-4 lg:grid-cols-3">
@@ -1044,9 +1003,7 @@ export default function SettingsPage() {
 
               <Button
                 className="w-full"
-                onClick={
-                  handlePasswordUpdate
-                }
+                onClick={handlePasswordUpdate}
               >
                 <KeyRound className="size-4" />
                 Update password
@@ -1082,59 +1039,53 @@ export default function SettingsPage() {
                 </TableHeader>
 
                 <TableBody>
-                  {sessions.map(
-                    (session) => (
-                      <TableRow
-                        key={
-                          session.device
-                        }
-                      >
-                        <TableCell className="font-medium">
-                          {session.device}
+                  {sessions.map((session) => (
+                    <TableRow
+                      key={session.device}
+                    >
+                      <TableCell className="font-medium">
+                        {session.device}
 
-                          {session.current && (
-                            <Badge
-                              variant="success"
-                              className="ml-2"
-                            >
-                              This device
-                            </Badge>
-                          )}
-                        </TableCell>
-
-                        <TableCell>
-                          {session.location}
-                        </TableCell>
-
-                        <TableCell>
-                          {formatDate(
-                            session.lastActive
-                          )}
-                        </TableCell>
-
-                        <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            disabled={
-                              session.current
-                            }
-                            onClick={() =>
-                              toast.success(
-                                "Session ended",
-                                {
-                                  description:
-                                    session.device,
-                                }
-                              )
-                            }
+                        {session.current && (
+                          <Badge
+                            variant="success"
+                            className="ml-2"
                           >
-                            Sign out
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    )
-                  )}
+                            This device
+                          </Badge>
+                        )}
+                      </TableCell>
+
+                      <TableCell>
+                        {session.location}
+                      </TableCell>
+
+                      <TableCell>
+                        {formatDate(
+                          session.lastActive
+                        )}
+                      </TableCell>
+
+                      <TableCell className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          disabled={session.current}
+                          onClick={() =>
+                            toast.success(
+                              "Session ended",
+                              {
+                                description:
+                                  session.device,
+                              }
+                            )
+                          }
+                        >
+                          Sign out
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
                 </TableBody>
               </Table>
             </SectionCard>
@@ -1158,9 +1109,7 @@ export default function SettingsPage() {
                 </div>
 
                 <Switch
-                  onCheckedChange={(
-                    checked
-                  ) =>
+                  onCheckedChange={(checked) =>
                     toast.success(
                       checked
                         ? "2FA enabled"
@@ -1176,8 +1125,8 @@ export default function SettingsPage() {
 
               <p className="flex items-center gap-1.5 text-[11px] text-[var(--muted-foreground)]">
                 <ShieldCheck className="size-3.5" />
-                Recommended for Admin and
-                Super Admin roles.
+                Recommended for Admin and Super
+                Admin roles.
               </p>
             </SectionCard>
 
@@ -1205,9 +1154,7 @@ export default function SettingsPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={
-                    handleExportRequest
-                  }
+                  onClick={handleExportRequest}
                 >
                   <Building2 className="size-3.5" />
                   Request export
@@ -1231,9 +1178,7 @@ export default function SettingsPage() {
                 <Button
                   variant="destructive"
                   size="sm"
-                  onClick={
-                    handleResetData
-                  }
+                  onClick={handleResetData}
                 >
                   <Trash2 className="size-3.5" />
                   Reset data

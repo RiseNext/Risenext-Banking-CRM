@@ -8,11 +8,10 @@ export interface SessionUser {
   id: string;
   name: string;
   email: string;
-<<<<<<< HEAD
-=======
+
   phone?: string | null;
   avatarUrl?: string | null;
->>>>>>> a52d548 (Initial commit)
+
   role: { id: string; key: string; name: string; level: number };
   permissions: string[];
   bankIds: string[] | null;
@@ -24,17 +23,15 @@ interface AuthContextValue {
   ready: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
-<<<<<<< HEAD
-=======
+
   updateUser: (next: Partial<SessionUser>) => void;
->>>>>>> a52d548 (Initial commit)
+
   /** Permission checks mirror the server's; the server remains authoritative. */
   can: (permission: string) => boolean;
   canAny: (...permissions: string[]) => boolean;
 }
 
-<<<<<<< HEAD
-=======
+
 const AUTH_STORAGE_KEY = "risenext-auth-user";
 
 function persistAuthUser(user: SessionUser | null) {
@@ -46,7 +43,7 @@ function persistAuthUser(user: SessionUser | null) {
   window.localStorage.removeItem(AUTH_STORAGE_KEY);
 }
 
->>>>>>> a52d548 (Initial commit)
+
 const AuthContext = React.createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -58,8 +55,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // the session without ever putting a token in localStorage.
   React.useEffect(() => {
     let cancelled = false;
-<<<<<<< HEAD
-=======
 
     if (typeof window !== "undefined") {
       try {
@@ -75,7 +70,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
->>>>>>> a52d548 (Initial commit)
     (async () => {
       try {
         const body = await apiRequest<{ accessToken: string; user: SessionUser }>(
@@ -85,17 +79,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (cancelled) return;
         setAccessToken(body.accessToken);
         setUser(body.user);
-<<<<<<< HEAD
+
       } catch {
         if (!cancelled) setUser(null);
-=======
+
         persistAuthUser(body.user);
       } catch {
         if (!cancelled) {
           setUser(null);
           persistAuthUser(null);
         }
->>>>>>> a52d548 (Initial commit)
+
       } finally {
         if (!cancelled) setReady(true);
       }
@@ -109,10 +103,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     () =>
       onForcedSignOut(() => {
         setUser(null);
-<<<<<<< HEAD
-=======
+
         persistAuthUser(null);
->>>>>>> a52d548 (Initial commit)
+
         router.replace("/login");
       }),
     [router],
@@ -126,10 +119,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
     setAccessToken(body.accessToken);
     setUser(body.user);
-<<<<<<< HEAD
-=======
+
     persistAuthUser(body.user);
->>>>>>> a52d548 (Initial commit)
+
   }, []);
 
   const signOut = React.useCallback(async () => {
@@ -140,11 +132,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     setAccessToken(null);
     setUser(null);
-<<<<<<< HEAD
+
     router.replace("/login");
   }, [router]);
 
-=======
+
     persistAuthUser(null);
     router.replace("/login");
   }, [router]);
@@ -157,7 +149,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
->>>>>>> a52d548 (Initial commit)
+
   const can = React.useCallback(
     (permission: string) => user?.permissions.includes(permission) ?? false,
     [user],
@@ -168,13 +160,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   const value = React.useMemo(
-<<<<<<< HEAD
+
     () => ({ user, ready, signIn, signOut, can, canAny }),
     [user, ready, signIn, signOut, can, canAny],
-=======
+
     () => ({ user, ready, signIn, signOut, updateUser, can, canAny }),
     [user, ready, signIn, signOut, updateUser, can, canAny],
->>>>>>> a52d548 (Initial commit)
+
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

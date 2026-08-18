@@ -3,11 +3,11 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-<<<<<<< HEAD
+
 import { FileSpreadsheet, Plus, UserPlus, Users } from "lucide-react";
-=======
+
 import { Download, FileSpreadsheet, Plus, UploadCloud, UserPlus, Users } from "lucide-react";
->>>>>>> a52d548 (Initial commit)
+ 
 import { PageHeader } from "@/components/shared/page-header";
 import { DataTable, type Column } from "@/components/shared/data-table";
 import { StatusBadge } from "@/components/shared/status-badge";
@@ -75,9 +75,7 @@ export default function CustomersPage() {
   const resolvedBankId = form.bankId || (banks[0]?.id ?? "");
   const resolvedAssignedTo = form.assignedTo || (employees[0]?.id ?? "");
   const [importOpen, setImportOpen] = React.useState(false);
-<<<<<<< HEAD
 
-=======
   const manualFormInputRef = React.useRef<HTMLInputElement>(null);
 
   function downloadDraftApplication() {
@@ -134,7 +132,7 @@ export default function CustomersPage() {
 
     event.target.value = "";
   }
->>>>>>> a52d548 (Initial commit)
+
 
 async function deleteCustomer(id: string) {
   // Soft delete: the record moves to the recycle bin, it is not destroyed.
@@ -285,7 +283,7 @@ async function deleteCustomer(id: string) {
       exportValue: (row) => row.createdAt,
     },
     {
-<<<<<<< HEAD
+
   key: "actions",
   header: "Actions",
   render: (row) => (
@@ -321,7 +319,7 @@ async function deleteCustomer(id: string) {
     </div>
   ),
 }
-=======
+
       key: "actions",
       header: "Actions",
       render: (row) => (
@@ -349,7 +347,7 @@ async function deleteCustomer(id: string) {
         </div>
       ),
     }
->>>>>>> a52d548 (Initial commit)
+
 
   ];
 
@@ -364,12 +362,11 @@ async function deleteCustomer(id: string) {
         description="Every lead and borrower on the desk, with KYC state, assigned owner, and lender mapping."
         actions={
           <>
-<<<<<<< HEAD
-=======
+
             <Button variant="outline" onClick={downloadDraftApplication}>
               <Download className="size-4" /> Draft application
             </Button>
->>>>>>> a52d548 (Initial commit)
+
             <Button variant="outline" asChild>
               <Link href="/documents">Documents</Link>
             </Button>
@@ -378,11 +375,11 @@ async function deleteCustomer(id: string) {
                 <FileSpreadsheet className="size-4" /> Import Excel
               </Button>
             )}
-<<<<<<< HEAD
+
             <Button onClick={() => setOpen(true)}>
               <Plus className="size-4" /> Add customer
             </Button>
-=======
+
             <div className="flex items-center gap-2">
               <Button variant="outline" onClick={() => manualFormInputRef.current?.click()}>
                 <UploadCloud className="size-4" /> Re-upload written form
@@ -391,13 +388,12 @@ async function deleteCustomer(id: string) {
                 <Plus className="size-4" /> Add customer
               </Button>
             </div>
->>>>>>> a52d548 (Initial commit)
+
           </>
         }
       />
 
-<<<<<<< HEAD
-=======
+
       <input
         ref={manualFormInputRef}
         type="file"
@@ -406,7 +402,6 @@ async function deleteCustomer(id: string) {
         onChange={handleManualFormUpload}
       />
 
->>>>>>> a52d548 (Initial commit)
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Total on desk" value={String(rows.length)} icon={Users} helper="in this view" />
         <StatCard
